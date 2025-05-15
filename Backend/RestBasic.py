@@ -1,19 +1,32 @@
 from fastapi import FastAPI
 import pandas as pd
-
+import os
+from fastapi.staticfiles import StaticFiles
 import matplotlib
 matplotlib.use('Agg')  
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 valor_global = None
 df = pd.read_csv("africa.csv")
 
+
+app.mount("/animacion", StaticFiles(directory="animacion"), name="animacion")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/pais/{nombre_pais}")
 def read_pais(nombre_pais: str):
-    global valor_global
+
     valor_global = nombre_pais
     generar_animacion(valor_global)
     return {"animacion_generada_para": valor_global}
@@ -56,3 +69,11 @@ def generar_animacion(pais):
     ruta = f"animacion/{pais}_renovables.gif"
     ani.save(ruta, writer="pillow", fps=5)
     plt.close(fig)
+
+
+@app.get("/paises")
+def read_paises():  
+        df = pd.read_csv("africa.csv")
+        read_paises = df["Entity"].unique()
+        return read_paises.tolist()
+    
